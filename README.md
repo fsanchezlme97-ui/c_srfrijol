@@ -54,6 +54,8 @@ Antes de cargar uno, `scripts/liberar-vram.sh` descarga lo que Ollama tenga en m
 - Para entrar desde el móvil u otro equipo, el cortafuegos debe dejar pasar el puerto 3000 desde la red local:
   `sudo ufw allow from 192.168.18.0/24 to any port 3000 proto tcp`.
 - `config/openwebui.env` solo vale para el **primer** arranque: luego todo se cambia en Ajustes › Administración.
+- Tras cada respuesta Open WebUI solo genera el título del chat: las etiquetas y las sugerencias de seguimiento
+  están apagadas (Administración › Interfaz) porque ocupaban la gráfica 4–9 s más por mensaje.
 - Imagen: en el chat, el botón de imagen usa `flux2-klein`; se cambia a `sdxl` o `flux1-schnell` en
   Administración › Imágenes.
 
@@ -143,10 +145,11 @@ gráfica, no pidas imágenes ni el 35B en Open WebUI: no caben a la vez.
 |---|---|
 | gemma4:e4b | 88 t/s generando |
 | qwen3.5:9b | 32,6 t/s generando, 156 t/s leyendo |
-| Qwen3.6-35B-A3B | 18–19 t/s generando, 362 t/s leyendo (lote 2048); ~25 s la primera vez (carga) |
+| Qwen3.6-35B-A3B | 16–18 t/s generando, ~310 t/s leyendo (lote 2048); 6–11 s de carga si está en la caché de disco, ~25 s si no; se queda cargado 30 min |
 | FLUX.2 klein 1024² 4 pasos | 26 s (35 s pedida desde Open WebUI con la carga) |
-| SDXL 1024² 25 pasos q8_0 | 80 s |
-| FLUX.1 schnell 1024² 4 pasos | 147 s (no cabe en la VRAM libre; mejor klein) |
+| FLUX.2 klein 704×1024 + 1 referencia (modo Compositor de imágenes) | 30–32 s con `--flash-attn on` (36 s sin él; 53 s sin `--offload-to-cpu`) |
+| SDXL 1024² 25 pasos q8_0 | 76 s con `--flash-attn on` (82 s sin él) |
+| FLUX.1 schnell 1024² 4 pasos | 57 s con `--flash-attn on` y el escritorio ligero (147 s antes, con ~4 GB de VRAM ocupados) |
 | Kokoro | 4,5 s de voz en 1,3 s |
 | whisper small (CPU) | 3,7 s para 4,5 s de audio, con arranque |
 | Wan 2.2 TI2V 5B, 640×352, 49 fotogramas (2 s), 20 pasos | 4,6 min (10 s por paso) |

@@ -8,8 +8,10 @@ startPort: 10001
 macros:
   "E": "/home/flsl/Proyectos/c_srfrijol"
   "llama": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/llama/llama-server --host 127.0.0.1 --port ${PORT}"
-  "sdq": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/sd/sd-server --listen-ip 127.0.0.1 --listen-port ${PORT} --vae-tiling"
-  "sd": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/sd/sd-server --listen-ip 127.0.0.1 --listen-port ${PORT} --offload-to-cpu --vae-tiling"
+  # --flash-attn on (medido 2026-11-17): klein 704x1024 con referencia 36 → 32 s, SDXL 82 → 76 s, misma imagen.
+  # klein va MÁS rápido con --offload-to-cpu (36 s) que todo en VRAM (53 s): no quitarlo.
+  "sdq": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/sd/sd-server --listen-ip 127.0.0.1 --listen-port ${PORT} --vae-tiling --flash-attn on"
+  "sd": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/sd/sd-server --listen-ip 127.0.0.1 --listen-port ${PORT} --offload-to-cpu --vae-tiling --flash-attn on"
   "img": "/home/flsl/Proyectos/c_srfrijol/models/image"
 
 models:
@@ -25,9 +27,11 @@ models:
       --flash-attn on --jinja
       # lotes grandes: con los expertos en la RAM, la lectura del prompt va al doble (362 frente a 181 t/s)
       --ubatch-size 2048 --batch-size 2048
+      # probado 2026-11-17 y peor: KV en q8_0 (8–14 t/s), --fit-target 512 (9–14), 12 hilos (8); así da 16 t/s
     env:
       - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/llama"
-    ttl: 600
+    # 30 min: volver a cargarlo y releer el prompt del modo (~3,5k tokens) cuesta ~20 s en cada pausa larga
+    ttl: 1800
 
   "flux2-klein":
     name: "FLUX.2 klein 4B (imagen, 4 pasos)"
