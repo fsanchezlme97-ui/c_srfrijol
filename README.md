@@ -27,7 +27,7 @@ Open WebUI :3000 ──► Ollama :11434          gemma4:e4b (el de Helpert) · 
                                         ├─► sd-server (stable-diffusion.cpp, Vulkan)  flux2-klein · sdxl · flux1-schnell
                                         ├─► Kokoro-FastAPI (CPU)  voz
                                         └─► whisper-server (CPU)  voz a texto
-ComfyUI (ROCm) :8188 ── vídeo con Wan 2.2 TI2V 5B (aparte, ver abajo)
+ComfyUI (ROCm) :8188 ── vídeo con Wan 2.2: TI2V 5B (texto a vídeo) e I2V 14B (anima ilustraciones), aparte, ver abajo
 ```
 
 **llama-swap** arranca cada servidor cuando se le pide y lo apaga tras un rato sin uso (`ttl`). Los de la gráfica
@@ -44,6 +44,7 @@ Antes de cargar uno, `scripts/liberar-vram.sh` descarga lo que Ollama tenga en m
 | Voz a texto | whisper.cpp large-v3-turbo q5_0 | `models/audio` |
 | Documentos (RAG) | Qwen3-Embedding-0.6B (CPU, dentro de Open WebUI) | caché de Hugging Face |
 | Vídeo | Wan 2.2 TI2V 5B Q4 + umt5 Q4 + VAE | `models/video/wan22`, en ComfyUI |
+| Animar ilustraciones | Wan 2.2 I2V A14B Q3_K_M (ruido alto y bajo) + LoRA Lightning de 4 pasos + VAE de Wan 2.1 | `models/video/wan22-14b`, en ComfyUI |
 
 ## Open WebUI
 
@@ -132,6 +133,16 @@ por la playa al atardecer, de 3 segundos"; máximo 5). La función (`openwebui/f
 Administración › Funciones) pasa el texto a un prompt en inglés con gemma4, libera la gráfica, arranca ComfyUI si
 hace falta y deja el vídeo en el chat. Unos 5 minutos por cada 2 s de vídeo. Pasos y duración por defecto, en los
 ajustes (válvulas) de la función.
+
+## Animar ilustraciones
+
+En el modo **🎨 Compositor de imágenes**: «anima la ilustración de …». La herramienta `animar` (en
+`openwebui/herramientas/ilustrar.py`) recorta la imagen a 480×832 (o 832×480), libera la gráfica, lanza
+`workflows/wan22-14b-imagen-a-video.json` en ComfyUI y guarda el vídeo (2 s, 16 fps, WebM) junto a la ilustración, como
+`<nombre>_anim_NNN.webm`; al terminar descarga los modelos de ComfyUI para que el 35B vuelva a caber. Wan 2.2 14B en
+Q3_K_M ocupa 7 GB por fase y solo quedan ~3 GB de VRAM con el escritorio: la mitad va en la RAM y cada paso tarda ~61 s.
+Medido el 2026-11-17: 8,8 min la primera vez y 5,7 min con los modelos ya en la caché de disco. Mantiene cara, ropa
+y estilo de la ilustración; el 5B de texto a vídeo no parte de una imagen.
 
 ## ComfyUI (vídeo)
 
