@@ -36,12 +36,13 @@ Antes de cargar uno, `scripts/liberar-vram.sh` descarga lo que Ollama tenga en m
 
 | Qué | Modelo | Dónde |
 |---|---|---|
-| Texto rápido | gemma4:e4b | Ollama (compartido con Helpert) |
+| Texto rápido | gemma4:e4b (traductor de prompts) en Ollama; Gemma 4 E4B Q4_K_M + visión (modo ⚡ Rápido) | Ollama (compartido con Helpert); `models/llm`, llama.cpp |
 | Texto, buena calidad | qwen3.5:9b | Ollama |
-| Texto, el más capaz | Qwen3.6-35B-A3B UD-IQ4_XS (MoE) | `models/llm`, llama.cpp con `--fit` |
-| Imagen | FLUX.2 klein 4B Q4 (por defecto), SDXL 1.0, FLUX.1 schnell Q4 | `models/image` |
+| Texto, el más capaz | Qwen3.6-35B-A3B UD-IQ4_XS (MoE) + visión (`mmproj` F16) | `models/llm`, llama.cpp con `--fit` |
+| Imagen | FLUX.2 klein 4B Q4 (por defecto), Illustrious XL 2.0 (anime), SDXL 1.0, FLUX.1 schnell Q4 | `models/image` |
 | Voz | Kokoro, voz `ef_dora` (español) | `kokoro/` |
-| Voz a texto | whisper.cpp small (el de HyprFrijol) | `~/.local/share/hyprfrijol/whisper` |
+| Voz a texto | whisper.cpp large-v3-turbo q5_0 | `models/audio` |
+| Documentos (RAG) | Qwen3-Embedding-0.6B (CPU, dentro de Open WebUI) | caché de Hugging Face |
 | Vídeo | Wan 2.2 TI2V 5B Q4 + umt5 Q4 + VAE | `models/video/wan22`, en ComfyUI |
 
 ## Open WebUI
@@ -98,6 +99,7 @@ herramientas del modo en cada mensaje: la interfaz solo las manda en el primero 
 | 🌻 Crítico optimista | Qwen3.6 35B-A3B, sin pensar | Lo mejor de tu obra y cómo crecer, en positivo |
 | ⚖️ Crítico constructivo | Qwen3.6 35B-A3B, sin pensar | Aciertos, problemas, cambios por orden de impacto y nota de 1 a 10 |
 | 🥀 Crítico implacable (Ego) | Qwen3.6 35B-A3B, sin pensar | Duro y exigente, al estilo de Anton Ego, pero cada defecto con lo que haría falta para arreglarlo |
+| ⚡ Rápido | Gemma 4 E4B, todo en la gráfica | Preguntas, ideas, resúmenes y traducciones cortas a ~58 t/s; ve imágenes; sin herramientas (para el libro, imágenes o código, el modo de cada cosa) |
 
 **Compositor.** Las notas y digitaciones salen de la herramienta *Teoría musical*
 (`openwebui/herramientas/teoria_musical.py`, autocomprobación: `python3 -I openwebui/herramientas/teoria_musical.py`):
@@ -157,8 +159,17 @@ gráfica, no pidas imágenes ni el 35B en Open WebUI: no caben a la vez.
 | SDXL 1024² 25 pasos q8_0 | 76 s con `--flash-attn on` (82 s sin él) |
 | FLUX.1 schnell 1024² 4 pasos | 57 s con `--flash-attn on` y el escritorio ligero (147 s antes, con ~4 GB de VRAM ocupados) |
 | Kokoro | 4,5 s de voz en 1,3 s |
-| whisper small (CPU) | 3,7 s para 4,5 s de audio, con arranque |
-| Wan 2.2 TI2V 5B, 640×352, 49 fotogramas (2 s), 20 pasos | 4,6 min (10 s por paso) |
+| whisper large-v3-turbo q5 (CPU) | 11 s para 14 s de voz; con ruido, 8 % de palabras mal (small: 21 %, en 3 s) |
+| Gemma 4 E4B (todo en la gráfica) | 58 t/s generando (el 35B: 21 t/s); no usa bien las herramientas: pide permiso en vez de llamarlas |
+| Qwen3.6-35B-A3B con visión | 19,7 t/s (20,8 sin `mmproj`); describe una imagen en ~14 s |
+| Illustrious XL 832×1216, 28 pasos q8_0 | 72–78 s; sigue mucho mejor que klein pelo, ojos y peinado pedidos, sin referencias |
+| Embeddings, 6 preguntas en español sobre 6 pasajes | Qwen3-Embedding-0.6B 6/6, all-MiniLM-L6-v2 (el de serie) 2/6 |
+| Wan 2.2 TI2V 5B, 640×352, 49 fotogramas (2 s), 20 pasos | 4,6 min (10 s por paso); con 12 pasos 2,6 min y casi igual |
+
+Probado el 2026-11-17 y descartado por ir peor en esta gráfica: Qwen3.6-35B-A3B **MTP** (6–7 t/s: el cabezal le
+quita VRAM a los expertos y solo acierta el 39 %), **Gemma 4 26B-A4B** IQ4_XS (8 t/s), **Z-Image Turbo** Q4_K_M
+(63 s frente a 25 s de klein, y peor coherencia) y la **LoRA Turbo** de Wan 2.2 5B (4–8 pasos: colores y caras
+rotos con el modelo Q4).
 
 ## Carpetas
 

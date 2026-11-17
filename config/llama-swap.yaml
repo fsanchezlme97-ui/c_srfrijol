@@ -22,6 +22,8 @@ models:
       ${llama}
       --model ${E}/models/llm/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf
       --alias qwen3.6-35b-a3b
+      # visión: cuesta ~5 % (20,8 → 19,7 t/s, medido 2026-11-17)
+      --mmproj ${E}/models/llm/mmproj-Qwen3.6-35B-A3B-F16.gguf
       # 32k: medido 2026-11-17, misma velocidad que 16k (--fit reparte); el modo desarrollo lo necesita
       --fit on --fit-target 1024 --ctx-size 32768
       --flash-attn on --jinja
@@ -31,6 +33,19 @@ models:
     env:
       - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/llama"
     # 30 min: volver a cargarlo y releer el prompt del modo (~3,5k tokens) cuesta ~20 s en cada pausa larga
+    ttl: 1800
+
+  "gemma-4-e4b":
+    name: "Gemma 4 E4B (rápido, todo en la gráfica)"
+    description: "Para lo sencillo: responde varias veces más rápido que el 35B"
+    cmd: |
+      ${llama}
+      --model ${E}/models/llm/gemma-4-E4B-it-Q4_K_M.gguf
+      --alias gemma-4-e4b
+      --mmproj ${E}/models/llm/mmproj-gemma-4-E4B-F16.gguf
+      --n-gpu-layers 99 --ctx-size 32768 --flash-attn on --jinja
+    env:
+      - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/llama"
     ttl: 1800
 
   "flux2-klein":
@@ -61,6 +76,20 @@ models:
     checkEndpoint: /v1/models
     ttl: 300
 
+  "illustrious":
+    name: "Illustrious XL 2.0 (imagen anime, SDXL)"
+    unlisted: true
+    cmd: |
+      # SDXL afinado en anime (etiquetas tipo danbooru); mismos trucos que sdxl: q8_0 al cargar, VAE fp16-fix
+      ${sdq}
+      --model ${img}/sdxl/Illustrious-XL-v2.0.safetensors --type q8_0
+      --vae ${img}/sdxl/sdxl_vae_fp16_fix.safetensors
+      --cfg-scale 6.0 --steps 28 --sampling-method euler_a -W 832 -H 1216
+    env:
+      - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/sd"
+    checkEndpoint: /v1/models
+    ttl: 300
+
   "flux1-schnell":
     name: "FLUX.1 schnell (imagen, 4 pasos)"
     unlisted: true
@@ -84,12 +113,14 @@ models:
     ttl: 1800
 
   "whisper":
-    name: "whisper.cpp small (voz a texto, CPU)"
+    name: "whisper.cpp large-v3-turbo (voz a texto, CPU)"
     unlisted: true
     cmd: |
+      # turbo q5 (medido 2026-11-17, 14 s de voz con ruido): 8 % de palabras mal frente al 21 % de small, en 11 s
+      # en vez de 3 s; con audio limpio empatan (4 %)
       /usr/bin/whisper-server --host 127.0.0.1 --port ${PORT}
-      -m /home/flsl/.local/share/hyprfrijol/whisper/ggml-small.bin
-      -l es -ng --inference-path /v1/audio/transcriptions
+      -m ${E}/models/audio/ggml-large-v3-turbo-q5_0.bin
+      -l es -ng -t 6 --inference-path /v1/audio/transcriptions
     checkEndpoint: /
     ttl: 1800
 
@@ -101,7 +132,7 @@ routing:
         "gpu":
           swap: true
           exclusive: true
-          members: ["qwen3.6-35b-a3b", "flux2-klein", "sdxl", "flux1-schnell"]
+          members: ["qwen3.6-35b-a3b", "gemma-4-e4b", "flux2-klein", "sdxl", "illustrious", "flux1-schnell"]
         "cpu":
           swap: false
           exclusive: false
