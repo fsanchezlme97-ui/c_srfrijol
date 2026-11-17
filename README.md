@@ -153,7 +153,7 @@ gráfica, no pidas imágenes ni el 35B en Open WebUI: no caben a la vez.
 |---|---|
 | gemma4:e4b | 88 t/s generando |
 | qwen3.5:9b | 32,6 t/s generando, 156 t/s leyendo |
-| Qwen3.6-35B-A3B | 16–18 t/s generando, ~310 t/s leyendo (lote 2048); 6–11 s de carga si está en la caché de disco, ~25 s si no; se queda cargado 30 min |
+| Qwen3.6-35B-A3B | 16–18 t/s generando, ~310 t/s leyendo (lote 2048); 6–11 s de carga si está en la caché de disco, ~25 s si no; se queda cargado 10 min (con él cargado, el gemma4 de Harper en HyprFrijol va a 9 t/s en vez de ~78) |
 | FLUX.2 klein 1024² 4 pasos | 26 s (35 s pedida desde Open WebUI con la carga) |
 | FLUX.2 klein 704×1024 + 1 referencia (modo Compositor de imágenes) | 30–32 s con `--flash-attn on` (36 s sin él; 53 s sin `--offload-to-cpu`) |
 | SDXL 1024² 25 pasos q8_0 | 76 s con `--flash-attn on` (82 s sin él) |

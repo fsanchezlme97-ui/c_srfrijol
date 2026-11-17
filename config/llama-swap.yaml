@@ -32,8 +32,9 @@ models:
       # probado 2026-11-17 y peor: KV en q8_0 (8–14 t/s), --fit-target 512 (9–14), 12 hilos (8); así da 16 t/s
     env:
       - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/llama"
-    # 30 min: volver a cargarlo y releer el prompt del modo (~3,5k tokens) cuesta ~20 s en cada pausa larga
-    ttl: 1800
+    # 10 min: mientras está cargado, el gemma4 de Harper (HyprFrijol, Ollama) no cabe y genera a 9 t/s en vez de ~78
+    # (medido 2026-11-17); recargarlo y releer el prompt del modo cuesta ~20 s tras una pausa larga
+    ttl: 600
 
   "gemma-4-e4b":
     name: "Gemma 4 E4B (rápido, todo en la gráfica)"
