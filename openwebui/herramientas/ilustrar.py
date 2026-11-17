@@ -17,8 +17,9 @@ from pydantic import BaseModel, Field
 
 E = os.path.expanduser("~/Proyectos/c_srfrijol")
 CARPETAS = ("personajes", "escenarios", "objetos")
-# ~0,7 MP: con 8 GB de VRAM y --offload-to-cpu, 832x1216 + una referencia tardaba 12 min (172 s/paso)
-FORMATOS = {"vertical": "704x1024", "horizontal": "1024x704", "cuadrado": "832x832"}
+# ~1 MP: con --flash-attn on y referencias ≤768 px, 832x1216 + una referencia tarda ~48 s (704x1024: ~31 s, con
+# menos detalle en ojos y pelo). Antes de esos dos cambios tardaba 12 min.
+FORMATOS = {"vertical": "832x1216", "horizontal": "1216x832", "cuadrado": "1024x1024"}
 REF_MAX = 768  # lado mayor de cada referencia: más grande solo añade tokens (y minutos) a la atención
 IMG = (".jpg", ".jpeg", ".png", ".webp")
 # estilo de la casa, sacado del arte de referencia del autor: va en todas las imágenes para que no deriven
@@ -81,7 +82,7 @@ class Tools:
     async def ilustrar(self, libro: str, escena: str, nombre: str, referencias: str = "",
                        carpeta: str = "personajes", formato: str = "vertical", __event_emitter__=None) -> str:
         """
-        Genera una ilustración (3–6 minutos) y la guarda en arte/<carpeta>/ del libro. El estilo de la casa se añade solo.
+        Genera una ilustración (1–3 minutos) y la guarda en arte/<carpeta>/ del libro. El estilo de la casa se añade solo.
         :param libro: título del libro.
         :param escena: descripción en INGLÉS: quién (rasgos de la ficha), qué hace, dónde, luz y encuadre. Con referencias, nombra «the character from image 1», etc.
         :param nombre: nombre base del archivo, p. ej. "lucia_transformada" (se le añade un número).
@@ -120,7 +121,7 @@ class Tools:
                 "their reference image; ignore any conflicting description of them.\n") if refs else ""
         prompt = f"{fiel}{escena.strip()}\n\nStyle: {ESTILO}{horror}"
         size = FORMATOS.get(formato, FORMATOS["vertical"])
-        await estado(f"Ilustrando con {len(refs)} referencias ({size}), 3–6 min…")
+        await estado(f"Ilustrando con {len(refs)} referencias ({size}), 1–3 min…")
         t0 = time.time()
         try:
             async with aiohttp.ClientSession() as s:

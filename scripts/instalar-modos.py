@@ -44,6 +44,9 @@ def leer_modo(p):
     params = {"system": m.group(2).strip()}
     if cab.get("temperatura"):
         params["temperature"] = float(cab["temperatura"])
+    # muestreo recomendado por Qwen sin pensar (top_p 0.8, top_k 20, min_p 0, presence_penalty 1.5); llama-server
+    # usaría 0.95/40/0.05/0. «penalizacion: 0» en modos que copian literal (código, rutas, nombres de archivo)
+    params.update(top_p=0.8, top_k=20, min_p=0.0, presence_penalty=float(cab.get("penalizacion", 1.5)))
     if cab.get("contexto"):
         params["num_ctx"] = int(cab["contexto"])  # Ollama usa 4096 si no: no caben prompt + resultados de herramientas
     if cab.get("pensar") == "no":

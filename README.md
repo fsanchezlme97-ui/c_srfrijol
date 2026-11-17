@@ -81,6 +81,12 @@ scripts/instalar-modos.py      # crea o sobrescribe modos, herramientas y carpet
 Cada modo tiene **su carpeta en el lateral** (con su emoji; los críticos juntos en «Críticos»): un chat nuevo dentro
 de la carpeta empieza ya con ese modo y se guarda ahí, así no se mezclan los chats de un modo con los de otro.
 
+Todos usan el muestreo que recomienda Qwen sin pensar (top_p 0.8, top_k 20, min_p 0, presence_penalty 1.5; la
+temperatura la pone cada modo); Desarrollo y Compositor de imágenes van con `penalizacion: 0` porque copian literal
+código, rutas y nombres. La métrica (sílabas, sinalefas, acento final, rima y esquema) la calcula la herramienta
+`metrica` por reglas: el 35B la contaba mal (0/3 en una prueba de cuatro versos) y pensando tarda más de 6 min; con la
+herramienta acierta siempre que da números.
+
 Los modos no cargan las herramientas integradas de Open WebUI (memoria, notas…), para que el modelo solo vea las
 suyas. El filtro global `openwebui/funciones/herramientas_modo.py` (lo instala el mismo script) vuelve a activar las
 herramientas del modo en cada mensaje: la interfaz solo las manda en el primero del chat.

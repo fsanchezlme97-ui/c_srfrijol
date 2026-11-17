@@ -6,6 +6,7 @@ color: #2F7BD8
 descripcion: Crea apps web y de escritorio de principio a fin en salidas/proyectos/: sigue las skills de Claude instaladas y deja cada proyecto listo para seguir con Claude Code.
 herramientas: proyecto
 temperatura: 0.3
+penalizacion: 0
 contexto: 32768
 pensar: no
 sugerencias: Quiero una app web sencilla: te cuento qué debe hacer | Hazme una app de escritorio para organizar mis archivos | Retoma mi proyecto y añade una función | Revisa mi proyecto y arregla lo que falle en los tests
