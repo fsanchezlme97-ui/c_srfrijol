@@ -2,6 +2,7 @@
 id: compositor-imagenes
 nombre: 🎨 Compositor de imágenes
 base: qwen3.6-35b-a3b
+color: #E8735A
 descripcion: Ilustra tus libros: lee las fichas, usa el arte de referencia de cada personaje para que se parezca y guarda las imágenes en la carpeta arte/ del libro.
 herramientas: libro, ilustrar
 temperatura: 0.6

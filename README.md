@@ -3,10 +3,11 @@
 # Open Web UI - C_SrFrijol
 
 IA local en este equipo (Ryzen 5 5600G, 46 GB de RAM, Radeon RX 6600 XT de 8 GB), con **Open WebUI** como
-interfaz. Todo escucha solo en `127.0.0.1` y nada arranca solo al iniciar sesión.
+interfaz. Open WebUI se abre a la red de casa con cuenta; lo demás (llama-swap, ComfyUI) escucha solo en
+`127.0.0.1`. Nada arranca solo al iniciar sesión.
 
 ```
-./srfrijol arrancar     # Open WebUI en http://127.0.0.1:3000
+./srfrijol arrancar     # Open WebUI en http://127.0.0.1:3000 y desde casa en http://<equipo>.local:3000
 ./srfrijol abrir        # arranca si hace falta y abre el navegador (lanzador «Open Web UI - C_SrFrijol» del menú)
 ./srfrijol estado       # qué está en marcha y qué modelo ocupa la gráfica
 ./srfrijol video        # ComfyUI en http://127.0.0.1:8188 (libera antes la gráfica)
@@ -45,8 +46,13 @@ Antes de cargar uno, `scripts/liberar-vram.sh` descarga lo que Ollama tenga en m
 
 ## Open WebUI
 
-- Sin cuentas: un solo usuario, solo desde este equipo. Si algún día se abre a la red, hay que empezar con
-  `WEBUI_AUTH=True` y un `data/` nuevo (no se puede activar después sobre la misma base de datos).
+- Con cuenta y abierto a la red de casa (`0.0.0.0:3000`). Usuario y contraseña del admin en `config/webui-cuenta`
+  (solo legible por ti, fuera de git; `scripts/instalar-modos.py` entra con ella). Registro cerrado: las cuentas
+  nuevas las crea el admin en Administración › Usuarios.
+- `./srfrijol arrancar` pone `CORS_ALLOW_ORIGIN` con localhost, `<equipo>.local` y la IP actual: solo la propia
+  interfaz puede usar la API, no otras webs abiertas en el navegador. Si cambia la IP, `./srfrijol parar` y arrancar.
+- Para entrar desde el móvil u otro equipo, el cortafuegos debe dejar pasar el puerto 3000 desde la red local:
+  `sudo ufw allow from 192.168.18.0/24 to any port 3000 proto tcp`.
 - `config/openwebui.env` solo vale para el **primer** arranque: luego todo se cambia en Ajustes › Administración.
 - Imagen: en el chat, el botón de imagen usa `flux2-klein`; se cambia a `sdxl` o `flux1-schnell` en
   Administración › Imágenes.
@@ -62,12 +68,16 @@ también en `salidas/imagenes/` en PNG (`openwebui/funciones/imagen.py`).
 
 Cada modo es un modelo de Open WebUI (modelo base + prompt de sistema + herramientas) definido en
 `openwebui/modos/<id>.md`: cabecera `--- … ---` (`id`, `nombre`, `base`, `descripcion`, `herramientas`, `temperatura`,
-`contexto`, `pensar: no`, `sugerencias` separadas por `|`) y debajo el prompt. Las herramientas (código Python que el
+`contexto`, `pensar: no`, `sugerencias` separadas por `|`, `color: #rrggbb` y opcional `grupo`) y debajo el prompt. Las herramientas (código Python que el
 modelo llama) están en `openwebui/herramientas/`. Tras editar cualquiera de los dos, con Open WebUI en marcha:
 
 ```
-scripts/instalar-modos.py      # crea o sobrescribe modos y herramientas
+openwebui/.venv/bin/python scripts/avatares-modos.py   # avatar de cada modo (assets/modos/<id>.png), si cambia
+scripts/instalar-modos.py      # crea o sobrescribe modos, herramientas y carpetas
 ```
+
+Cada modo tiene **su carpeta en el lateral** (con su emoji; los críticos juntos en «Críticos»): un chat nuevo dentro
+de la carpeta empieza ya con ese modo y se guarda ahí, así no se mezclan los chats de un modo con los de otro.
 
 Los modos no cargan las herramientas integradas de Open WebUI (memoria, notas…), para que el modelo solo vea las
 suyas. El filtro global `openwebui/funciones/herramientas_modo.py` (lo instala el mismo script) vuelve a activar las

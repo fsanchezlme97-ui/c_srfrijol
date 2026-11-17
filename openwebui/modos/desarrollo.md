@@ -2,6 +2,7 @@
 id: desarrollo
 nombre: 🛠️ Desarrollo
 base: qwen3.6-35b-a3b
+color: #2F7BD8
 descripcion: Crea apps web y de escritorio de principio a fin en salidas/proyectos/: sigue las skills de Claude instaladas y deja cada proyecto listo para seguir con Claude Code.
 herramientas: proyecto
 temperatura: 0.3

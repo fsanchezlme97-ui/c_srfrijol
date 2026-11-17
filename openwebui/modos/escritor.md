@@ -2,6 +2,7 @@
 id: escritor
 nombre: ✍️ Escritor
 base: qwen3.6-35b-a3b
+color: #12A15A
 descripcion: Escritor y editor de novela y relato: ideas, estructura, personajes, mundo, capítulos y revisión. Guarda la biblia de cada libro para seguir en otro chat.
 herramientas: libro
 temperatura: 0.85

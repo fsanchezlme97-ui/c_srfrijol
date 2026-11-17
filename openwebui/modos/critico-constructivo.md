@@ -2,6 +2,8 @@
 id: critico-constructivo
 nombre: ⚖️ Crítico constructivo
 base: qwen3.6-35b-a3b
+color: #2FA39D
+grupo: 🧐 Críticos
 descripcion: Crítico de arte neutral y equilibrado: aciertos, problemas y cambios concretos, como un buen editor.
 herramientas: libro
 temperatura: 0.5

@@ -9,6 +9,7 @@
 !/workflows/
 !/config/
 /config/webui-secret
+/config/webui-cuenta
 !/openwebui/
 /openwebui/*
 !/openwebui/modos/

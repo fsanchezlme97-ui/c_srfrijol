@@ -2,6 +2,7 @@
 id: compositor
 nombre: 🎸 Compositor
 base: qwen3.6-35b-a3b
+color: #E9A23B
 descripcion: Compositor de canciones: acordes, progresiones, ritmos, escalas, círculo de quintas, letras. Guitarra, piano, ukelele y bajo.
 herramientas: teoria_musical
 temperatura: 0.7

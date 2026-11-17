@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Instala (o actualiza) en Open WebUI los modos de openwebui/modos/*.md y las herramientas de openwebui/herramientas/*.py.
+Cada modo lleva su avatar (assets/modos/<id>.png, de scripts/avatares-modos.py) y su carpeta en el lateral, con el modo
+como modelo por defecto: los chats de cada modo quedan separados. «grupo:» mete la carpeta dentro de otra.
 
 Cada modo es un «modelo» de Open WebUI: un modelo base + su prompt de sistema (+ herramientas). Vuelve a ejecutarlo
 tras editar un .md o un .py: sobrescribe lo instalado. Uso: scripts/instalar-modos.py (con ./srfrijol arrancar hecho).
 """
+import base64
 import json
 import pathlib
 import re
@@ -54,13 +57,34 @@ def leer_modo(p):
             "capabilities": {"vision": True, "file_upload": True, "web_search": True, "image_generation": True,
                              "code_interpreter": True, "citations": True, "status_updates": True,
                              "builtin_tools": False},
-            "suggestion_prompts":[{"content": s.strip()} for s in cab.get("sugerencias", "").split("|") if s.strip()]}
-    return {"id": cab["id"], "base_model_id": cab["base"], "name": cab["nombre"], "meta": meta, "params": params}
+            "suggestion_prompts":[{"content": s.strip()} for s in cab.get("sugerencias", "").split("|") if s.strip()],
+            "tags": [{"name": cab.get("grupo", "Modos").split(" ", 1)[-1]}]}
+    png = E / "assets/modos" / f"{cab['id']}.png"
+    if png.exists():
+        meta["profile_image_url"] = "data:image/png;base64," + base64.b64encode(png.read_bytes()).decode()
+    return {"id": cab["id"], "base_model_id": cab["base"], "name": cab["nombre"], "meta": meta, "params": params,
+            "grupo": cab.get("grupo", "")}
+
+
+def carpeta(nombre, token, padre=None, modelo=None):
+    """Crea (o actualiza) la carpeta «<emoji> Nombre» del lateral; con modelo, los chats nuevos en ella usan ese modo."""
+    icono, _, texto = nombre.partition(" ")
+    existe = next((f for f in pedir("/folders/", token=token) or []
+                   if f["name"] == texto and f.get("parent_id") == padre), None)
+    if not existe:
+        existe = pedir("/folders/", {"name": texto, "parent_id": padre, "meta": {"icon": icono}}, token)
+    datos = (pedir(f"/folders/{existe['id']}", token=token) or {}).get("data") or {}  # conserva lo que haya puesto el usuario
+    if modelo:
+        datos["model_ids"] = [modelo]
+    pedir(f"/folders/{existe['id']}/update", {"meta": {"icon": icono}, "data": datos}, token)
+    return existe["id"]
 
 
 def main():
     try:
-        token = pedir("/auths/signin", {"email": "", "password": ""})["token"]  # WEBUI_AUTH=False: entra como admin
+        cuenta = E / "config/webui-cuenta"  # «email\ncontraseña» del admin; sin el archivo, Open WebUI sin cuentas
+        email, clave = (cuenta.read_text().split("\n")[:2] if cuenta.exists() else ("", ""))
+        token = pedir("/auths/signin", {"email": email, "password": clave})["token"]
     except urllib.error.URLError:
         sys.exit("Open WebUI no responde en :3000. Arráncalo con ./srfrijol arrancar")
 
@@ -87,10 +111,15 @@ def main():
     print(f"filtro {p.stem}: activo y global")
 
     modos = [leer_modo(p) for p in sorted((E / "openwebui/modos").glob("*.md"))]
+    grupos = {m.pop("grupo") for m in modos} - {""}
     if modos:
         pedir("/models/import", {"models": modos}, token)
-    for m in modos:
-        print(f"modo {m['name']} ({m['base_model_id']}): instalado")
+    padres = {g: carpeta(g, token) for g in sorted(grupos)}
+    for m, p in zip(modos, sorted((E / "openwebui/modos").glob("*.md"))):
+        grupo = re.search(r"^grupo:\s*(.+)$", p.read_text().split("\n---", 1)[0], re.M)
+        carpeta(m["name"], token, padres.get(grupo.group(1).strip()) if grupo else None, m["id"])
+        print(f"modo {m['name']} ({m['base_model_id']}): instalado, con su carpeta"
+              + (f" dentro de «{grupo.group(1).strip()}»" if grupo else ""))
 
 
 if __name__ == "__main__":

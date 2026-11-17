@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # srfrijol — arranca, para o enseña el estado de c_srfrijol (no arranca solo al iniciar sesión).
-#   ./srfrijol arrancar   llama-swap (127.0.0.1:8090) y Open WebUI (http://127.0.0.1:3000)
+#   ./srfrijol arrancar   llama-swap (127.0.0.1:8090) y Open WebUI (http://127.0.0.1:3000, y desde casa en la IP del equipo)
 #   ./srfrijol video      ComfyUI (vídeo con Wan 2.2) en http://127.0.0.1:8188, con la gráfica libre
 #   ./srfrijol parar      todo (llama-swap apaga los modelos que tenga cargados)
 #   ./srfrijol abrir      arranca si hace falta y abre Open WebUI en el navegador
@@ -14,12 +14,17 @@ case "${1:-estado}" in
     u is-active -q srfrijol-swap || systemd-run --user --unit=srfrijol-swap --collect -q \
       -p StandardOutput=append:"$E/logs/llama-swap.log" -p StandardError=append:"$E/logs/llama-swap.log" \
       "$E/bin/llama-swap" -config "$E/config/llama-swap.yaml" -listen 127.0.0.1:8090
+    ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<NF;i++) if($i=="src") print $(i+1)}')
+    host=$(hostname | tr 'A-Z' 'a-z')
+    # solo la propia interfaz (aquí o desde otro equipo de casa) puede usar la API, no otras webs del navegador
+    cors="http://127.0.0.1:3000;http://localhost:3000;http://$host.local:3000${ip:+;http://$ip:3000}"
     u is-active -q srfrijol-webui || systemd-run --user --unit=srfrijol-webui --collect -q \
-      -p EnvironmentFile="$E/config/openwebui.env" -p WorkingDirectory="$E/openwebui" \
+      -p EnvironmentFile="$E/config/openwebui.env" -p WorkingDirectory="$E/openwebui" -E CORS_ALLOW_ORIGIN="$cors" \
       -E WEBUI_SECRET_KEY="$(cat "$E/config/webui-secret")" \
       -p StandardOutput=append:"$E/logs/openwebui.log" -p StandardError=append:"$E/logs/openwebui.log" \
-      "$E/openwebui/.venv/bin/open-webui" serve --host 127.0.0.1 --port 3000
-    echo "Arrancando… Open WebUI en http://127.0.0.1:3000 (la primera vez tarda ~1 min)";;
+      "$E/openwebui/.venv/bin/open-webui" serve --host 0.0.0.0 --port 3000
+    echo "Arrancando… Open WebUI en http://127.0.0.1:3000 y, desde casa, http://$host.local:3000${ip:+ o http://$ip:3000} (~1 min)"
+    echo "Cuenta: $(head -1 "$E/config/webui-cuenta" 2>/dev/null) (contraseña en config/webui-cuenta)";;
   video)
     # la gráfica entera para ComfyUI: fuera lo que tengan cargado llama-swap y Ollama
     curl -s -X POST --max-time 30 http://127.0.0.1:8090/api/models/unload >/dev/null 2>&1
