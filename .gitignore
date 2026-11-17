@@ -1,0 +1,18 @@
+# Lista blanca: solo el código propio de c_srfrijol. Modelos, binarios, clones (ComfyUI, Kokoro), datos y chats
+# de Open WebUI, registros y salidas se quedan fuera; scripts/ los vuelve a instalar o descargar.
+/*
+!/.gitignore
+!/README.md
+!/srfrijol
+!/assets/
+!/scripts/
+!/workflows/
+!/config/
+/config/webui-secret
+!/openwebui/
+/openwebui/*
+!/openwebui/modos/
+!/openwebui/herramientas/
+!/openwebui/funciones/
+__pycache__/
+*.pyc

@@ -1,0 +1,105 @@
+# llama-swap: un solo punto de entrada (http://127.0.0.1:8090/v1) que arranca cada servidor cuando se le pide y lo
+# apaga al rato sin uso. Grupo «gpu»: solo uno a la vez (la RX 6600 XT tiene 8 GB y el escritorio usa ~4).
+# Grupo «cpu»: voz (Kokoro) y transcripción (whisper.cpp), en la CPU, conviven con todo.
+healthCheckTimeout: 600
+logLevel: info
+startPort: 10001
+
+macros:
+  "E": "/home/flsl/Proyectos/c_srfrijol"
+  "llama": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/llama/llama-server --host 127.0.0.1 --port ${PORT}"
+  "sdq": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/sd/sd-server --listen-ip 127.0.0.1 --listen-port ${PORT} --vae-tiling"
+  "sd": "/home/flsl/Proyectos/c_srfrijol/scripts/liberar-vram.sh /home/flsl/Proyectos/c_srfrijol/bin/sd/sd-server --listen-ip 127.0.0.1 --listen-port ${PORT} --offload-to-cpu --vae-tiling"
+  "img": "/home/flsl/Proyectos/c_srfrijol/models/image"
+
+models:
+  "qwen3.6-35b-a3b":
+    name: "Qwen3.6 35B-A3B (llama.cpp, MoE)"
+    description: "El más capaz: expertos en la RAM, atención en la gráfica (--fit)"
+    cmd: |
+      ${llama}
+      --model ${E}/models/llm/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf
+      --alias qwen3.6-35b-a3b
+      # 32k: medido 2026-11-17, misma velocidad que 16k (--fit reparte); el modo desarrollo lo necesita
+      --fit on --fit-target 1024 --ctx-size 32768
+      --flash-attn on --jinja
+      # lotes grandes: con los expertos en la RAM, la lectura del prompt va al doble (362 frente a 181 t/s)
+      --ubatch-size 2048 --batch-size 2048
+    env:
+      - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/llama"
+    ttl: 600
+
+  "flux2-klein":
+    name: "FLUX.2 klein 4B (imagen, 4 pasos)"
+    unlisted: true
+    cmd: |
+      ${sd}
+      --diffusion-model ${img}/flux2-klein/flux-2-klein-4b-Q4_0.gguf
+      --llm ${img}/flux2-klein/Qwen3-4B-Q4_K_M.gguf
+      --vae ${img}/flux2-klein/flux2-vae.safetensors
+      --cfg-scale 1.0 --steps 4 -W 1024 -H 1024
+    env:
+      - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/sd"
+    checkEndpoint: /v1/models
+    ttl: 300
+
+  "sdxl":
+    name: "SDXL 1.0 (imagen)"
+    unlisted: true
+    cmd: |
+      # cuantizado a q8_0 al cargar (2,6 GB): cabe en la VRAM libre sin ir y venir de la RAM, el doble de rápido
+      ${sdq}
+      --model ${img}/sdxl/sd_xl_base_1.0.safetensors --type q8_0
+      --vae ${img}/sdxl/sdxl_vae_fp16_fix.safetensors
+      --cfg-scale 7.0 --steps 25 --sampling-method dpm++2m -W 1024 -H 1024
+    env:
+      - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/sd"
+    checkEndpoint: /v1/models
+    ttl: 300
+
+  "flux1-schnell":
+    name: "FLUX.1 schnell (imagen, 4 pasos)"
+    unlisted: true
+    cmd: |
+      ${sd}
+      --diffusion-model ${img}/flux1-schnell/flux1-schnell-q4_k.gguf
+      --t5xxl ${img}/flux1-schnell/t5xxl-Q4_K.gguf
+      --clip_l ${img}/flux1-schnell/clip_l.safetensors
+      --vae ${img}/flux1-schnell/ae.safetensors
+      --cfg-scale 1.0 --steps 4 --sampling-method euler -W 1024 -H 1024
+    env:
+      - "LD_LIBRARY_PATH=/home/flsl/Proyectos/c_srfrijol/bin/sd"
+    checkEndpoint: /v1/models
+    ttl: 300
+
+  "kokoro":
+    name: "Kokoro (voz, CPU)"
+    unlisted: true
+    cmd: ${E}/scripts/kokoro.sh ${PORT}
+    checkEndpoint: /health
+    ttl: 1800
+
+  "whisper":
+    name: "whisper.cpp small (voz a texto, CPU)"
+    unlisted: true
+    cmd: |
+      /usr/bin/whisper-server --host 127.0.0.1 --port ${PORT}
+      -m /home/flsl/.local/share/hyprfrijol/whisper/ggml-small.bin
+      -l es -ng --inference-path /v1/audio/transcriptions
+    checkEndpoint: /
+    ttl: 1800
+
+routing:
+  router:
+    use: group
+    settings:
+      groups:
+        "gpu":
+          swap: true
+          exclusive: true
+          members: ["qwen3.6-35b-a3b", "flux2-klein", "sdxl", "flux1-schnell"]
+        "cpu":
+          swap: false
+          exclusive: false
+          persistent: true
+          members: ["kokoro", "whisper"]
