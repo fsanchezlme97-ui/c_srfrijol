@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# srfrijol — arranca, para o enseña el estado de c_srfrijol (no arranca solo al iniciar sesión).
+# srfrijol — arranca, para o enseña el estado de Open Web UI - C_SrFrijol (no arranca solo; ./iniciar y ./detener lo llaman).
 #   ./srfrijol arrancar   llama-swap (127.0.0.1:8090) y Open WebUI (http://127.0.0.1:3000, y desde casa en la IP del equipo)
 #   ./srfrijol video      ComfyUI (vídeo con Wan 2.2) en http://127.0.0.1:8188, con la gráfica libre
 #   ./srfrijol parar      todo (llama-swap apaga los modelos que tenga cargados)
-#   ./srfrijol abrir      arranca si hace falta y abre Open WebUI en el navegador
 #   ./srfrijol estado     qué está en marcha y qué modelo ocupa la gráfica
 #   ./srfrijol logs       registro de Open WebUI y de llama-swap
 set -uo pipefail
@@ -39,18 +38,11 @@ case "${1:-estado}" in
     [ -n "${SRFRIJOL_SIN_NAVEGADOR:-}" ] || xdg-open http://127.0.0.1:8188 >/dev/null 2>&1 &;;
   parar)
     # con patrón: si una unidad no está cargada (p. ej. ComfyUI), la lista explícita hacía fallar el stop entero
-    u stop 'srfrijol-*.service'; echo "Parado."
-    notify-send -i "$E/assets/brand/icono.png" -a "Open Web UI - C_SrFrijol" "Open Web UI - C_SrFrijol" "Apagado: la gráfica queda libre." 2>/dev/null;;
-  abrir)  # arranca si hace falta y abre Open WebUI en el navegador
-    u is-active -q srfrijol-webui || { "$0" arrancar >/dev/null
-      notify-send -i "$E/assets/brand/icono.png" -a "Open Web UI - C_SrFrijol" "Open Web UI - C_SrFrijol" "Arrancando… se abrirá el navegador (~1 min)." 2>/dev/null; }
-    for _ in $(seq 1 90); do curl -sf -o /dev/null --max-time 2 http://127.0.0.1:3000/ && break; sleep 2; done
-    if curl -sf -o /dev/null --max-time 2 http://127.0.0.1:3000/; then xdg-open http://127.0.0.1:3000 >/dev/null 2>&1 &
-    else notify-send -u critical -i "$E/assets/brand/icono.png" -a "Open Web UI - C_SrFrijol" "Open Web UI - C_SrFrijol" "Open WebUI no responde: mira «srfrijol logs»." 2>/dev/null; exit 1; fi;;
+    u stop 'srfrijol-*.service'; echo "Parado: la gráfica queda libre.";;
   estado)
     for s in srfrijol-swap srfrijol-webui srfrijol-comfyui; do printf '%-14s %s\n' "$s" "$(u is-active $s)"; done
     echo "Modelos cargados: $(curl -s --max-time 2 http://127.0.0.1:8090/running | jq -r '[.running[]?|.model]|join(", ")' 2>/dev/null)"
     echo "VRAM usada: $(( $(cat /sys/class/drm/card*/device/mem_info_vram_used 2>/dev/null | sort -n | tail -1) / 1048576 )) MiB de 8192";;
   logs) tail -n 40 "$E/logs/openwebui.log" "$E/logs/llama-swap.log";;
-  *) sed -n '2,8p' "$0"; exit 1;;
+  *) sed -n '2,7p' "$0"; exit 1;;
 esac

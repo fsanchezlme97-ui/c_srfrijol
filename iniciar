@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Arranca Open Web UI - C_SrFrijol (llama-swap + Open WebUI en http://127.0.0.1:3000).
+exec "$(dirname "$(readlink -f "$0")")/srfrijol" arrancar

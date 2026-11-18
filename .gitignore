@@ -4,6 +4,8 @@
 !/.gitignore
 !/README.md
 !/srfrijol
+!/iniciar
+!/detener
 !/assets/
 !/scripts/
 !/workflows/

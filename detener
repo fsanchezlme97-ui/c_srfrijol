@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Detiene Open Web UI - C_SrFrijol (Open WebUI, llama-swap, ComfyUI) y deja libre la gráfica.
+exec "$(dirname "$(readlink -f "$0")")/srfrijol" parar

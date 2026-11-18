@@ -1,5 +1,3 @@
-<p align="center"><img alt="Open Web UI - C_SrFrijol — Local · Privado · Creativo" src="assets/brand/logo.png" width="760"></p>
-
 # Open Web UI - C_SrFrijol
 
 IA local en este equipo (Ryzen 5 5600G, 46 GB de RAM, Radeon RX 6600 XT de 8 GB), con **Open WebUI** como
@@ -7,17 +5,15 @@ interfaz. Open WebUI se abre a la red de casa con cuenta; lo demás (llama-swap,
 `127.0.0.1`. Nada arranca solo al iniciar sesión.
 
 ```
-./srfrijol arrancar     # Open WebUI en http://127.0.0.1:3000 y desde casa en http://<equipo>.local:3000
-./srfrijol abrir        # arranca si hace falta y abre el navegador (lanzador «Open Web UI - C_SrFrijol» del menú)
+./iniciar              # Open WebUI en http://127.0.0.1:3000 y desde casa en http://<equipo>.local:3000
+./detener              # todo (Open WebUI, llama-swap, ComfyUI): la gráfica queda libre
 ./srfrijol estado       # qué está en marcha y qué modelo ocupa la gráfica
 ./srfrijol video        # ComfyUI en http://127.0.0.1:8188 (libera antes la gráfica)
-./srfrijol parar        # todo
 ./srfrijol logs
 scripts/descargar.sh   # vuelve a bajar lo que falte (reanuda)
 ```
 
-En el menú de aplicaciones: **Open Web UI - C_SrFrijol** (abre) y **Apagar Open Web UI - C_SrFrijol** (`~/.local/share/applications/`).
-Logo e icono en `assets/brand/`.
+`./iniciar` y `./detener` llaman a `./srfrijol arrancar` y `./srfrijol parar`.
 
 ## Cómo está montado
 
